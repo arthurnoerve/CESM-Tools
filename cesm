@@ -4,15 +4,14 @@
 # Uses the Q manager, the create_newcase script and more to manage your CESM stuff.
 #
 #
-# cesm env - setup env vars
+# cesm config - setup env vars
 #
 # cesm list - list cases
 # cesm create "case" - create new case
 # cesm setup "case" - run cesm setup
 # cesm build "case" - build/compile case
 # cesm sub "case" - add case to queue
-
-# cesm restart "case" "from case" - Copuy restart files from "from case" to the input folder of "case"
+# cesm restart "case" "from case" - copy restart files from "from case" to the input folder of "case"
 
 RED='\033[0;31m'
 BLUE='\033[0;34m'
@@ -40,8 +39,13 @@ function print_help {
 }
 
 
+
+command=$1
+
+
+
 # Environment  errors
-if [[ -z "$CESM_ROOT" ]]; then
+if [[ -z "$CESM_ROOT" && $command != "config" ]]; then
     red "Missing env variable '\$CESM_ROOT'"
     echo "Add the following line to your .bashrc to save it:"
     echo "export CESM_ROOT=\"[your CESM root]\" "
@@ -50,11 +54,7 @@ fi
 
 
 
-
 # Manage program flow
-command=$1
-
-
 case "$command" in
 	list)
         ls "$CESM_ROOT/cases"
@@ -62,7 +62,7 @@ case "$command" in
     create)
         cas=$2
         blue "Creating case..."
-        $CESM_ROOT/scripts/create_newcase -case -res f19_g16 -compset=B_1850_CAM5_CN -mach vilje
+        $CESM_ROOT/scripts/create_newcase -case $CESM_ROOT/cases/$cas -res f19_g16 -compset=B_1850_CAM5_CN -mach vilje
         cp -vf $CESM_ROOT/pes/env_mach_pes_COM_long_long.xml  $CESM_ROOT/cases/$cas/env_mach_pes.xml
         blue "Successfully created: $cas"
     ;;
@@ -87,14 +87,19 @@ case "$command" in
         blue "Submitting $job"
         Q $job
     ;;
-    env)
+    restart)
+        cas=$2
+        from=$3
+        echo "Not finished"
+    ;;
+    config)
         echo "Welcome to the setup of CESM tools"
         echo "What is your CESM root located (the folder with the case folder inside):"
         read cesm_root
 
         #Write out lines
         echo "Please copy the following lines to your .bashrc or .bash_profile"
-        echo bash_line "CESM_ROOT" cesm_root
+        echo $(bash_line "CESM_ROOT" $cesm_root)
     ;;
 	help)
         print_help
