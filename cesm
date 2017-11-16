@@ -19,35 +19,45 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 function blue {
-    echo -e "${BLUE} $1 ${NC}"
+    echo -e "${BLUE}$1 ${NC}"
 }
 function red {
-    echo -e "${RED} $1 ${NC}"
+    echo -e "${RED}$1 ${NC}"
+}
+
+# Interface functions
+function bash_line {
+    echo "export $1=\"$2\" "
+}
+function print_help {
+    echo "Please use one of the following commands:";
+    echo "list"
+    echo "create 'case'"
+    echo "setup 'case'"
+    echo "build 'case'"
+    echo "sub 'case'"
+    echo "restart 'case' 'from'"
 }
 
 
 # Environment  errors
-if ["$CESM_ROOT" == ""]; then
-    echo "${RED}Missing env variable '$CESM_ROOT'${NC}"
-    echo "Add the following line to your .bashrc to save it"
+if [[ -z "$CESM_ROOT" ]]; then
+    red "Missing env variable '\$CESM_ROOT'"
+    echo "Add the following line to your .bashrc to save it:"
     echo "export CESM_ROOT=\"[your CESM root]\" "
+    exit 1
 fi
 
 
-# Interface functions
-function list_cases {
-    ls "$CESM_ROOT/cases"
-}
-function bash_line {
-    return "export $1=\"$2\" "
-}
+
 
 # Manage program flow
 command=$1
 
+
 case "$command" in
 	list)
-        list_cases;
+        ls "$CESM_ROOT/cases"
     ;;
     create)
         cas=$2
@@ -84,13 +94,10 @@ case "$command" in
 
         #Write out lines
         echo "Please copy the following lines to your .bashrc or .bash_profile"
-        echo bash_line("CESM_ROOT",cesm_root)
+        echo bash_line "CESM_ROOT" cesm_root
     ;;
-	\?)
-		echo "Please use one of the following commands:";
-        echo "list"
-        echo "create"
-        echo "go"
+	help)
+        print_help
 		exit 1
 	;;
 esac
