@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# Q Manager
+# Uses qsub and qstat to sub a job
+#
+# Q - prints current jobs in queue
+# Q "casname" - subs casname to queue
+
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+
+# Interface functions
+function sub_job {
+    echo -e "${BLUE} Submitting job ${$1}${NC}"
+    qsub $1
+
+}
+function get_queue {
+    return $(qstat -T | grep "$(whoami)" )
+}
+
+function job_in_queue {
+    out=$(qstat -T | grep "$(whoami)|$1" )
+
+    if ["$out" == "" ]; then
+        return true
+    else
+        return false
+    fi
+}
+
+
+# Manage program flow
+cas=$1
+
+if ["$cas" == ""]; then
+    # No arguments
+    echo get_queue()
+else
+    # Argument exists
+    sub_job($cas)
+
+    if job_in_queue($cas); then
+        echo "Job successfully submitted."
+    else
+        echo "${RED}Error during submit${NC}"
+    fi
+fi

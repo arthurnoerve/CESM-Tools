@@ -1,0 +1,94 @@
+#!/bin/bash
+
+# CESM Tools
+# Uses the Q manager, the create_newcase script and more to manage your CESM stuff.
+#
+# cesm list - list cases
+# cesm create "case" - create new case
+# cesm setup "case" - run cesm setup
+# cesm build "case" - build/compile case
+# cesm sub "case" - add case to queue
+# cesm env - setup env vars
+
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+function blue {
+    echo -e "${BLUE} $1 ${NC}"
+}
+function red {
+    echo -e "${RED} $1 ${NC}"
+}
+
+
+
+
+# Environment  errors
+if ["$CESM_ROOT" == ""]; then
+    echo "${RED}Missing env variable '$CESM_ROOT'${NC}"
+    echo "Add the following line to your .bashrc to save it"
+    echo "export CESM_ROOT=\"[your CESM root]\" "
+fi
+
+
+# Interface functions
+function list_cases {
+    ls "$CESM_ROOT/cases"
+}
+function bash_line {
+    return "export $1=\"$2\" "
+}
+
+# Manage program flow
+command=$1
+
+case "$command" in
+	list)
+        list_cases();
+    ;;
+    create)
+        cas=$2
+        blue("Creating case...")
+        $CESM_ROOT/scripts/create_newcase -case -res f19_g16 -compset=B_1850_CAM5_CN -mach vilje
+        cp -vf $CESM_ROOT/pes/env_mach_pes_COM_long_long.xml  $CESM_ROOT/cases/$cas/env_mach_pes.xml
+        blue("Successfully created: $cas")
+    ;;
+    setup)
+        cas=$2
+        blue("Setting up case...")
+        cd $CESM_ROOT/cases/$cas
+        ./cesm_setup
+        blue("Successfully set up: $cas")
+    ;;
+    build)
+        cas=$2
+        blue("Building case...")
+        cd $CESM_ROOT/cases/$cas
+        eval "./$cas.build"
+
+        blue("Successfully built: $cas")
+    ;;
+    sub)
+        cas=$2
+        job="./$cas.run"
+        blue("Submitting $job")
+        Q $job
+    ;;
+    env)
+        echo "Welcome to the setup of CESM tools"
+        echo "What is your CESM root located (the folder with the case folder inside):"
+        read cesm_root
+
+        #Write out lines
+        echo "Please copy the following lines to your .bashrc or .bash_profile"
+        echo bash_line("CESM_ROOT",cesm_root)
+    ;;
+	\?)
+		echo "Please use one of the following commands:";
+        echo "list"
+        echo "create"
+        echo "go"
+		exit 1
+	;;
+esac
