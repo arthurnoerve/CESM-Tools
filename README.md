@@ -10,7 +10,7 @@ git clone https://github.com/arthurnoerve/CESM-Tools
 
 
 ## Setup
-
+To make the commands executable from whereever clone/move the repo into your bin folder or add it to your PATH variable in your .bashrc/.bash_profile
 
 ## Contents
 

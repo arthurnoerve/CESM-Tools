@@ -13,18 +13,16 @@ NC='\033[0m' # No Color
 
 # Interface functions
 function sub_job {
-    echo -e "${BLUE} Submitting job ${$1}${NC}"
+    echo -e "${BLUE} Submitting job $1 ${NC}"
     qsub $1
-
 }
 function get_queue {
     return $(qstat -T | grep "$(whoami)" )
 }
-
-function job_in_queue {
+function jobs_in_queue {
     out=$(qstat -T | grep "$(whoami)|$1" )
 
-    if ["$out" == "" ]; then
+    if ["$out" = "" ]; then
         return true
     else
         return false
@@ -33,18 +31,18 @@ function job_in_queue {
 
 
 # Manage program flow
-cas=$1
+cas="$1"
 
-if ["$cas" == ""]; then
-    # No arguments
-    echo get_queue()
+if ["$cas" = ""]; then
+    if jobs_in_queue $cas; then
+        echo "No jobs in queue:"
+    else
+        echo "Jobs in queue:"
+        echo $(get_queue)
+    fi
+
 else
     # Argument exists
-    sub_job($cas)
-
-    if job_in_queue($cas); then
-        echo "Job successfully submitted."
-    else
-        echo "${RED}Error during submit${NC}"
-    fi
+    sub_job $cas
+    echo $(get_queue)
 fi

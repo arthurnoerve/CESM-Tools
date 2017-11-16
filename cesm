@@ -3,12 +3,16 @@
 # CESM Tools
 # Uses the Q manager, the create_newcase script and more to manage your CESM stuff.
 #
+#
+# cesm env - setup env vars
+#
 # cesm list - list cases
 # cesm create "case" - create new case
 # cesm setup "case" - run cesm setup
 # cesm build "case" - build/compile case
 # cesm sub "case" - add case to queue
-# cesm env - setup env vars
+
+# cesm restart "case" "from case" - Copuy restart files from "from case" to the input folder of "case"
 
 RED='\033[0;31m'
 BLUE='\033[0;34m'
@@ -20,8 +24,6 @@ function blue {
 function red {
     echo -e "${RED} $1 ${NC}"
 }
-
-
 
 
 # Environment  errors
@@ -45,34 +47,34 @@ command=$1
 
 case "$command" in
 	list)
-        list_cases();
+        list_cases;
     ;;
     create)
         cas=$2
-        blue("Creating case...")
+        blue "Creating case..."
         $CESM_ROOT/scripts/create_newcase -case -res f19_g16 -compset=B_1850_CAM5_CN -mach vilje
         cp -vf $CESM_ROOT/pes/env_mach_pes_COM_long_long.xml  $CESM_ROOT/cases/$cas/env_mach_pes.xml
-        blue("Successfully created: $cas")
+        blue "Successfully created: $cas"
     ;;
     setup)
         cas=$2
-        blue("Setting up case...")
+        blue "Setting up case..."
         cd $CESM_ROOT/cases/$cas
         ./cesm_setup
-        blue("Successfully set up: $cas")
+        blue "Successfully set up: $cas"
     ;;
     build)
         cas=$2
-        blue("Building case...")
+        blue "Building case..."
         cd $CESM_ROOT/cases/$cas
         eval "./$cas.build"
 
-        blue("Successfully built: $cas")
+        blue "Successfully built: $cas"
     ;;
     sub)
         cas=$2
         job="./$cas.run"
-        blue("Submitting $job")
+        blue "Submitting $job"
         Q $job
     ;;
     env)
