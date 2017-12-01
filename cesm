@@ -88,7 +88,8 @@ case "$command" in
         blue "Preparing case..."
         cd $CESM_ROOT/cases/$cas
         sed -i '.save' '/PBS -A/ s/$/ "$PROJ_ID"/' "$cas.run"
-        head -n -5 "$cas.run"
+        blue "Top of run script:"
+        head -n -3 "$cas.run"
         blue "Succcessfully prepared: $cas"
     sub)
         cas=$2
