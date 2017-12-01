@@ -34,7 +34,13 @@ function print_help {
     echo "create 'case'"
     echo "setup 'case'"
     echo "build 'case'"
+    echo "prep 'case'"
     echo "sub 'case'"
+    echo "auto 'case'"
+
+    echo "clean 'case'"
+    echo "delete 'case'"
+
     echo "restart 'case' 'from'"
 }
 
@@ -42,13 +48,10 @@ function print_help {
 
 command=$1
 
-
-
 # Environment  errors
-if [[ -z "$CESM_ROOT" && $command != "config" ]]; then
-    red "Missing env variable '\$CESM_ROOT'"
-    echo "Add the following line to your .bashrc to save it:"
-    echo "export CESM_ROOT=\"[your CESM root]\" "
+if [[ (-z "$CESM_ROOT" || -z "$CESM_WORK") && $command != "config" ]]; then
+    red "Missing env variables"
+    echo "Use 'cesm config' to setup..."
     exit 1
 fi
 
@@ -78,14 +81,52 @@ case "$command" in
         blue "Building case..."
         cd $CESM_ROOT/cases/$cas
         eval "./$cas.build"
-
         blue "Successfully built: $cas"
     ;;
+    prep)
+        cas=$2
+        blue "Preparing case..."
+        cd $CESM_ROOT/cases/$cas
+        sed -i '.save' '/PBS -A/ s/$/ "$PROJ_ID"/' "$cas.run"
+        head -n -5 "$cas.run"
+        blue "Succcessfully prepared: $cas"
     sub)
         cas=$2
         job="./$cas.run"
         blue "Submitting $job"
         Q $job
+    ;;
+    auto)
+        cas=$2
+        cesm setup $cas
+        cesm build $cas
+        cesm prep $cas
+        cesm sub $cas
+    ;;
+    clean)
+        read -p "Are you sure (Y/y for yes)? " -n 1 -r
+        echo    # (optional) move to a new line
+        if [[ $REPLY =~ ^[Yy]$ ]]
+        then
+            cas=$2
+            blue "Cleaning case..."
+            rm -rf $CESM_WORK/$cas # Delete build and output
+            cd $CESM_ROOT/cases/$cas # Go to case folder
+            eval "./$cas.clean_build" #Clean the build
+            blue "Succcessfully cleaned: $cas"
+        fi
+    ;;
+    delete)
+        read -p "Are you sure (Y/y for yes)? " -n 1 -r
+        echo    # (optional) move to a new line
+        if [[ $REPLY =~ ^[Yy]$ ]]
+        then
+            cas=$2
+            blue "Deleting case..."
+            rm -rf $CESM_WORK/$cas # Delete build and output
+            rm -rf $CESM_ROOT/cases/$cas # Delete case folder itself
+            blue "Succcessfully deleted: $cas"
+        fi
     ;;
     restart)
         cas=$2
@@ -94,12 +135,21 @@ case "$command" in
     ;;
     config)
         echo "Welcome to the setup of CESM tools"
-        echo "What is your CESM root located (the folder with the case folder inside):"
+
+        echo "Where is your CESM root located? (the folder with the case folder inside):"
         read cesm_root
+
+        echo "Where is your CESM work folder located? (the folder where the bld and run folders are put):"
+        read cesm_work
+
+        echo "What is your project id?"
+        read proj_id
 
         #Write out lines
         echo "Please copy the following lines to your .bashrc or .bash_profile"
         echo $(bash_line "CESM_ROOT" $cesm_root)
+        echo $(bash_line "CESM_WORK" $cesm_work)
+        echo $(bash_line "PROJ_ID" $proj_id)
     ;;
 	help)
         print_help
