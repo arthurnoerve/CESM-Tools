@@ -64,8 +64,15 @@ case "$command" in
     ;;
     create)
         cas=$2
+        if [[ -z "$3" ]];
+        then
+            set="B_1850_CAM5_CN"
+        elif [["$3" = "SOM"]]
+            set="E_1850_CAM5_CN"
+        fi
+
         blue "Creating case..."
-        $CESM_ROOT/scripts/create_newcase -case $CESM_ROOT/cases/$cas -res f19_g16 -compset=B_1850_CAM5_CN -mach vilje
+        $CESM_ROOT/scripts/create_newcase -case $CESM_ROOT/cases/$cas -res f19_g16 -compset=$set -mach vilje
         cp -vf $CESM_ROOT/pes/env_mach_pes_COM_long_long.xml  $CESM_ROOT/cases/$cas/env_mach_pes.xml
         blue "Successfully created: $cas"
     ;;

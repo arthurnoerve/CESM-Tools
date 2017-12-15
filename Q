@@ -17,10 +17,14 @@ function sub_job {
     qsub $1
 }
 function get_queue {
-    echo $(qstat -T | grep "$(whoami)" )
+    name=$(whoami)
+    short=${name:0:6}
+    echo $(qstat -T | grep "$short" )
 }
 function jobs_in_queue {
-    out=$( qstat -T | grep "$(whoami)|$1" )
+    name=${whoami}
+    short=${name:0:6}
+    out=$( qstat -T | grep "$name|$1" )
     echo "$out"
 
     if [["$out" = "" ]]; then
