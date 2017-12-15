@@ -36,7 +36,8 @@ function print_help {
     echo "build 'case'"
     echo "prep 'case'"
     echo "sub 'case'"
-    echo "auto 'case'"
+    echo "pre 'case'"
+    echo "post 'case'"
 
     echo "clean 'case'"
     echo "delete 'case'"
@@ -64,10 +65,9 @@ case "$command" in
     ;;
     create)
         cas=$2
-        if [[ -z "$3" ]];
-        then
+        if [[ -z "$3" ]]; then
             set="B_1850_CAM5_CN"
-        elif [["$3" = "SOM"]]
+        elif [["$3" = "SOM"]]; then
             set="E_1850_CAM5_CN"
         fi
 
@@ -83,6 +83,15 @@ case "$command" in
         ./cesm_setup
         blue "Successfully set up: $cas"
     ;;
+    prep)
+        cas=$2
+        blue "Preparing case..."
+        cd $CESM_ROOT/cases/$cas
+        sed --in-place=.original "/PBS -A/ s/$/ $PROJ_ID/" "$cas.run"
+        blue "Top of run script:"
+        head -n 3 "$cas.run"
+        blue "Succcessfully prepared: $cas"
+    ;;
     build)
         cas=$2
         blue "Building case..."
@@ -90,31 +99,27 @@ case "$command" in
         eval "./$cas.build"
         blue "Successfully built: $cas"
     ;;
-    prep)
-        cas=$2
-        blue "Preparing case..."
-        cd $CESM_ROOT/cases/$cas
-        sed -i '.save' '/PBS -A/ s/$/ "$PROJ_ID"/' "$cas.run"
-        blue "Top of run script:"
-        head -n -3 "$cas.run"
-        blue "Succcessfully prepared: $cas"
     sub)
         cas=$2
         job="./$cas.run"
         blue "Submitting $job"
         Q $job
     ;;
-    auto)
+    pre)
         cas=$2
+        cesm create $cas
         cesm setup $cas
-        cesm build $cas
         cesm prep $cas
+    ;;
+    post)
+        cas=$2
+        cesm build $cas
         cesm sub $cas
     ;;
     clean)
         read -p "Are you sure (Y/y for yes)? " -n 1 -r
         echo    # (optional) move to a new line
-        if [[ $REPLY =~ ^[Yy]$ ]]
+        if [[ $REPLY =~ ^[Yy]$ ]];
         then
             cas=$2
             blue "Cleaning case..."
@@ -127,7 +132,7 @@ case "$command" in
     delete)
         read -p "Are you sure (Y/y for yes)? " -n 1 -r
         echo    # (optional) move to a new line
-        if [[ $REPLY =~ ^[Yy]$ ]]
+        if [[ $REPLY =~ ^[Yy]$ ]];
         then
             cas=$2
             blue "Deleting case..."
