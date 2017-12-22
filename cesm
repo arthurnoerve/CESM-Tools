@@ -65,14 +65,13 @@ case "$command" in
     ;;
     create)
         cas=$2
-        if [[ -z "$3" ]]; then
-            set="B_1850_CAM5_CN"
-        elif [["$3" = "SOM"]]; then
-            set="E_1850_CAM5_CN"
+        compset="B_1850_CAM5_CN"
+        if [[ "$3" == "SOM" ]]; then
+            compset="E_1850_CAM5_CN"
         fi
 
         blue "Creating case..."
-        $CESM_ROOT/scripts/create_newcase -case $CESM_ROOT/cases/$cas -res f19_g16 -compset=$set -mach vilje
+        $CESM_ROOT/scripts/create_newcase -case $CESM_ROOT/cases/$cas -res f19_g16 -compset=$compset -mach vilje
         cp -vf $CESM_ROOT/pes/env_mach_pes_COM_long_long.xml  $CESM_ROOT/cases/$cas/env_mach_pes.xml
         blue "Successfully created: $cas"
     ;;
@@ -101,7 +100,7 @@ case "$command" in
     ;;
     sub)
         cas=$2
-        job="./$cas.run"
+        job="$CESM_ROOT/cases/$cas/$cas.run"
         blue "Submitting $job"
         Q $job
     ;;
