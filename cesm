@@ -43,18 +43,19 @@ function print_help {
 
     echo "help - print helpmenu"
 }
+function require_case {
+    if [[ -z "$cas"  ]]; then
+        red "Missing case"
+        echo "Go to a case folder or add a casename "
+        exit 1
+    fi
+}
 
 
 # Get command
 command=$1
 shift;
 
-# Environment  errors
-if [[ (-z "$CESM_ROOT" || -z "$CESM_WORK") && $command != "config" ]]; then
-    red "Missing env variables"
-    echo "Use 'cesm config' to setup..."
-    exit 1
-fi
 
 # Get casename
 # If we are in a case folder; subfolder of $CESM_ROOT
@@ -71,6 +72,14 @@ else
     params=${@}
 fi
 
+#
+if [[ (-z "$CESM_ROOT" || -z "$CESM_WORK") && $command != "config" ]]; then
+    red "Missing env variables"
+    echo "Use 'cesm config' to setup..."
+    exit 1
+fi
+
+
 
 # Manage program flow
 case "$command" in
@@ -78,6 +87,8 @@ case "$command" in
         ls "$CESM_ROOT/cases"
     ;;
     create)
+        require_case
+
         compset="B_1850_CAM5_CN"
 
         l=${#params[@]}
@@ -123,24 +134,32 @@ case "$command" in
 
 
     build)
+        require_case
+
         blue "Building case..."
         cd $CESM_ROOT/cases/$cas
         eval "./$cas.build"
         blue "Successfully built: $cas"
     ;;
     submit)
+        require_case
+
         job="$CESM_ROOT/cases/$cas/$cas.run"
         blue "Submitting $job"
         Q $job
     ;;
 
     bldsub)
+        require_case
+
         cesm build $cas
         cesm submit $cas
     ;;
 
 
     clean)
+        require_case
+
         read -p "Are you sure (Y/y for yes)? " -n 1 -r
         echo    # (optional) move to a new line
         if [[ $REPLY =~ ^[Yy]$ ]];
@@ -153,6 +172,8 @@ case "$command" in
         fi
     ;;
     delete)
+        require_case
+
         read -p "Are you sure (Y/y for yes)? " -n 1 -r
         echo    # (optional) move to a new line
         if [[ $REPLY =~ ^[Yy]$ ]];
