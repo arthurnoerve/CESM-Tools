@@ -1,0 +1,5 @@
+# Changelog
+
+
+11.01.2018
+* Change - Refactored the cesm commands 

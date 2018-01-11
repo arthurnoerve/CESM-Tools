@@ -3,7 +3,6 @@
 # CESM Tools
 # Uses the Q manager, the create_newcase script and more to manage your CESM stuff.
 #
-#
 # cesm config - setup env vars
 #
 # cesm list - list cases
@@ -31,23 +30,24 @@ function bash_line {
 function print_help {
     echo "Please use one of the following commands:";
     echo "list"
+
     echo "create 'case'"
-    echo "setup 'case'"
+
     echo "build 'case'"
-    echo "prep 'case'"
-    echo "sub 'case'"
-    echo "pre 'case'"
-    echo "post 'case'"
+    echo "submit 'case' - submit the case"
 
-    echo "clean 'case'"
-    echo "delete 'case'"
+    echo "bldsub 'case' - build and submit when done"
 
-    echo "restart 'case' 'from'"
+    echo "clean 'case' - remove build"
+    echo "delete 'case' - Remove case folder, build files and data"
+
+    echo "help - print helpmenu"
 }
 
 
-
+# Get command
 command=$1
+shift;
 
 # Environment  errors
 if [[ (-z "$CESM_ROOT" || -z "$CESM_WORK") && $command != "config" ]]; then
@@ -56,6 +56,20 @@ if [[ (-z "$CESM_ROOT" || -z "$CESM_WORK") && $command != "config" ]]; then
     exit 1
 fi
 
+# Get casename
+# If we are in a case folder; subfolder of $CESM_ROOT
+BASE=$CESM_ROOT
+remains="${PWD#$BASE}"
+remains=${remains#/} #remove slash in beginning if it exists
+subfolder=${remains%/*}
+if [[ -z $subfolder  ]]; then
+    for last; do true; done
+    cas=$last
+    params=${@:1:$#-1}
+else
+    cas=$subfolder
+    params=${@}
+fi
 
 
 # Manage program flow
@@ -64,26 +78,41 @@ case "$command" in
         ls "$CESM_ROOT/cases"
     ;;
     create)
-        cas=$2
         compset="B_1850_CAM5_CN"
-        if [[ "$3" == "SOM" ]]; then
-            compset="E_1850_CAM5_CN"
-        fi
+
+        l=${#params[@]}
+        while test $l -gt 0; do
+            val=${params[0]}
+            case "$val" in
+                -c|--compset)
+                    params=("${params[@]:1}")
+                    if [[ "${params[0]}" == "SOM" ]]; then
+                        compset="E_1850_CAM5_CN"
+                    fi
+                ;;
+                *)
+                    red "$val is not a valid flag"
+                    exit 0;
+                ;;
+            esac
+            params=("${params[@]:1}")
+
+            l=${#params[@]}
+        done
 
         blue "Creating case..."
         $CESM_ROOT/scripts/create_newcase -case $CESM_ROOT/cases/$cas -res f19_g16 -compset=$compset -mach vilje
         cp -vf $CESM_ROOT/pes/env_mach_pes_COM_long_long.xml  $CESM_ROOT/cases/$cas/env_mach_pes.xml
         blue "Successfully created: $cas"
-    ;;
-    setup)
-        cas=$2
+
+
+        # SETUP
         blue "Setting up case..."
         cd $CESM_ROOT/cases/$cas
         ./cesm_setup
         blue "Successfully set up: $cas"
-    ;;
-    prep)
-        cas=$2
+
+        # PREP ( add proj number )
         blue "Preparing case..."
         cd $CESM_ROOT/cases/$cas
         sed --in-place=.original "/PBS -A/ s/$/ $PROJ_ID/" "$cas.run"
@@ -91,36 +120,31 @@ case "$command" in
         head -n 3 "$cas.run"
         blue "Succcessfully prepared: $cas"
     ;;
+
+
     build)
-        cas=$2
         blue "Building case..."
         cd $CESM_ROOT/cases/$cas
         eval "./$cas.build"
         blue "Successfully built: $cas"
     ;;
-    sub)
-        cas=$2
+    submit)
         job="$CESM_ROOT/cases/$cas/$cas.run"
         blue "Submitting $job"
         Q $job
     ;;
-    pre)
-        cas=$2
-        cesm create $cas
-        cesm setup $cas
-        cesm prep $cas
-    ;;
-    post)
-        cas=$2
+
+    bldsub)
         cesm build $cas
-        cesm sub $cas
+        cesm submit $cas
     ;;
+
+
     clean)
         read -p "Are you sure (Y/y for yes)? " -n 1 -r
         echo    # (optional) move to a new line
         if [[ $REPLY =~ ^[Yy]$ ]];
         then
-            cas=$2
             blue "Cleaning case..."
             rm -rf $CESM_WORK/$cas # Delete build and output
             cd $CESM_ROOT/cases/$cas # Go to case folder
@@ -133,18 +157,13 @@ case "$command" in
         echo    # (optional) move to a new line
         if [[ $REPLY =~ ^[Yy]$ ]];
         then
-            cas=$2
             blue "Deleting case..."
             rm -rf $CESM_WORK/$cas # Delete build and output
             rm -rf $CESM_ROOT/cases/$cas # Delete case folder itself
             blue "Succcessfully deleted: $cas"
         fi
     ;;
-    restart)
-        cas=$2
-        from=$3
-        echo "Not finished"
-    ;;
+
     config)
         echo "Welcome to the setup of CESM tools"
 
@@ -167,4 +186,8 @@ case "$command" in
         print_help
 		exit 1
 	;;
+    *)
+        print_help
+        exit 1
+    ;;
 esac
