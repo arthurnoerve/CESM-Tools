@@ -2,15 +2,8 @@
 
 # CESM Tools
 # Uses the Q manager, the create_newcase script and more to manage your CESM stuff.
-#
-# cesm config - setup env vars
-#
-# cesm list - list cases
-# cesm create "case" - create new case
-# cesm setup "case" - run cesm setup
-# cesm build "case" - build/compile case
-# cesm sub "case" - add case to queue
-# cesm restart "case" "from case" - copy restart files from "from case" to the input folder of "case"
+
+
 
 RED='\033[0;31m'
 BLUE='\033[0;34m'
@@ -41,7 +34,7 @@ function print_help {
     echo "clean 'case' - remove build"
     echo "delete 'case' - Remove case folder, build files and data"
 
-    echo "help - print helpmenu"
+    echo "help - print help menu"
 }
 function require_case {
     if [[ -z "$cas"  ]]; then
@@ -57,13 +50,21 @@ command=$1
 shift;
 
 
+# Missing ENV
+if [[ (-z "$CESM_ROOT" || -z "$CESM_WORK") && $command != "config" ]]; then
+    red "Missing env variables"
+    echo "Use 'cesm config' to setup..."
+    exit 1
+fi
+
+
 # Get casename
 # If we are in a case folder; subfolder of $CESM_ROOT
-BASE=$CESM_ROOT
+BASE=$CESM_ROOT/cases
 remains="${PWD#$BASE}"
 remains=${remains#/} #remove slash in beginning if it exists
 subfolder=${remains%/*}
-if [[ -z $subfolder  ]]; then
+if [[ -z $subfolder || "${PWD#$BASE}" = "$PWD"  ]]; then
     for last; do true; done
     cas=$last
     params=${@:1:$#-1}
@@ -72,12 +73,7 @@ else
     params=${@}
 fi
 
-#
-if [[ (-z "$CESM_ROOT" || -z "$CESM_WORK") && $command != "config" ]]; then
-    red "Missing env variables"
-    echo "Use 'cesm config' to setup..."
-    exit 1
-fi
+
 
 
 
