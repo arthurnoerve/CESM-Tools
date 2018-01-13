@@ -67,10 +67,10 @@ subfolder=${remains%/*}
 if [[ -z $subfolder || "${PWD#$BASE}" = "$PWD"  ]]; then
     for last; do true; done
     cas=$last
-    params=${@:1:$#-1}
+    params=(${@:1:$#-1})
 else
     cas=$subfolder
-    params=${@}
+    params=(${@})
 fi
 
 
