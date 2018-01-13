@@ -86,15 +86,36 @@ case "$command" in
         require_case
 
         compset="B_1850_CAM5_CN"
+        walltime="08:00:00"
+        stop_n="5"
+        stop_option="ndays"
 
         l=${#params[@]}
         while test $l -gt 0; do
             val=${params[0]}
             case "$val" in
                 -c|--compset)
-                    params=("${params[@]:1}")
+                    params=("${params[@]:1}") # shift params by 1
                     if [[ "${params[0]}" == "SOM" ]]; then
                         compset="E_1850_CAM5_CN"
+                    fi
+                ;;
+                -w|--walltime)
+                    params=("${params[@]:1}")
+                    walltime=${params[0]}
+                ;;
+                -t|--time)
+                    params=("${params[@]:1}")
+                    time_str=${params[0]}
+                    if [[ "$time_str" =~ ^.*d$ ]]; then
+                        stop_n="${time_str%d}"
+                        stop_option="ndays"
+                    elif [[ "$time_str" =~ ^.*m$ ]]; then
+                        stop_n="${time_str%m}"
+                        stop_option="nmonths"
+                    elif [[ "$time_str" =~ ^.*y$ ]]; then
+                        stop_n="${time_str%y}"
+                        stop_option="nyears"
                     fi
                 ;;
                 *)
@@ -111,20 +132,29 @@ case "$command" in
         $CESM_ROOT/scripts/create_newcase -case $CESM_ROOT/cases/$cas -res f19_g16 -compset=$compset -mach vilje
         cp -vf $CESM_ROOT/pes/env_mach_pes_COM_long_long.xml  $CESM_ROOT/cases/$cas/env_mach_pes.xml
         blue "Successfully created: $cas"
-
+        echo
 
         # SETUP
         blue "Setting up case..."
         cd $CESM_ROOT/cases/$cas
         ./cesm_setup
         blue "Successfully set up: $cas"
+        echo
 
-        # PREP ( add proj number )
+        # PREP
         blue "Preparing case..."
         cd $CESM_ROOT/cases/$cas
+
+        # add proj number
         sed --in-place=.original "/PBS -A/ s/$/ $PROJ_ID/" "$cas.run"
+        # change walltime
+        sed --in-place=.original "/PBS -l walltime=/ s/$/$walltime/" "$cas.run"
+        # change env_run.xml
+        ./xmlchange STOP_OPTION=$stop_option,STOP_N=$stop_n
+
         blue "Top of run script:"
-        head -n 3 "$cas.run"
+        head -n 4 "$cas.run"
+
         blue "Succcessfully prepared: $cas"
     ;;
 
