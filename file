@@ -1,0 +1,10 @@
+#!/bin/csh -f
+#PBS -N SOM_CLD_SIMP_NO
+#PBS -A  
+#PBS -l select=8:ncpus=32:mpiprocs=16
+#PBS -l walltime=20:00:00
+#PBS -j oe
+
+# ----------------------------------------
+# PE LAYOUT:
+#   total number of tasks  = 128

@@ -148,7 +148,7 @@ case "$command" in
         # add proj number
         sed --in-place=.original "/PBS -A/ s/$/ $PROJ_ID/" "$cas.run"
         # change walltime
-        sed --in-place=.original "/PBS -l walltime=/ s/$/$walltime/" "$cas.run"
+        sed --in-place=.original "/PBS -l walltime=/ s/\=.*$/=$walltime/" "$cas.run"
         # change env_run.xml
         ./xmlchange STOP_OPTION=$stop_option,STOP_N=$stop_n
 
