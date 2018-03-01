@@ -7,6 +7,7 @@
 
 RED='\033[0;31m'
 BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 function blue {
@@ -15,26 +16,32 @@ function blue {
 function red {
     echo -e "${RED}$1 ${NC}"
 }
+function yellow {
+    echo -e "${YELLOW}$1 ${NC}"
+}
 
 # Interface functions
 function bash_line {
     echo "export $1=\"$2\" "
 }
 function print_help {
-    echo "Please use one of the following commands:";
-    echo "list"
+    yellow "Usage"
+    echo "  cesm [<command>] [options]"
 
-    echo "create 'case'"
+    yellow "Commands"
+    echo "  list"
+    echo "  create <case>"
 
-    echo "build 'case'"
-    echo "submit 'case' - submit the case"
+    echo "  build <case>"
+    echo "  submit <case> - submit the case"
+    echo "  bldsub <case> - build and submit when done"
 
-    echo "bldsub 'case' - build and submit when done"
+    echo "  clean <case> - remove build and output"
+    echo "  delete <case> - Remove case folder, build files and data (everything)"
 
-    echo "clean 'case' - remove build"
-    echo "delete 'case' - Remove case folder, build files and data"
+    echo "config - to reconfigure path settings"
+    echo "  help - print help menu"
 
-    echo "help - print help menu"
 }
 function require_case {
     if [[ -z "$cas"  ]]; then
@@ -82,10 +89,15 @@ case "$command" in
 	list)
         ls "$CESM_ROOT/cases"
     ;;
+
     create)
         require_case
 
-        compset="B_1850_CAM5_CN"
+        compset="B"
+        compset_mid_suffix="_1850_"
+        cam="CAM5"
+        compset_suffix="_CN"
+
         walltime="08:00:00"
         stop_n="5"
         stop_option="ndays"
@@ -97,7 +109,13 @@ case "$command" in
                 -c|--compset)
                     params=("${params[@]:1}") # shift params by 1
                     if [[ "${params[0]}" == "SOM" ]]; then
-                        compset="E_1850_CAM5_CN"
+                        compset="E"
+                    fi
+                ;;
+                --cam)
+                    params=("${params[@]:1}") # shift params by 1
+                    if [[ "${params[0]}" == "4" ]]; then
+                        cam="CAM4"
                     fi
                 ;;
                 -w|--walltime)
@@ -128,8 +146,11 @@ case "$command" in
             l=${#params[@]}
         done
 
+        # Assemble compset string
+        compset_string="$compset$compset_mid_suffix$cam$compset_suffix"
+
         blue "Creating case..."
-        $CESM_ROOT/scripts/create_newcase -case $CESM_ROOT/cases/$cas -res f19_g16 -compset=$compset -mach vilje
+        $CESM_ROOT/scripts/create_newcase -case $CESM_ROOT/cases/$cas -res f19_g16 -compset=$compset_string -mach vilje
         cp -vf $CESM_ROOT/pes/env_mach_pes_COM_long_long.xml  $CESM_ROOT/cases/$cas/env_mach_pes.xml
         blue "Successfully created: $cas"
         echo
