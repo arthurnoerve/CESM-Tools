@@ -94,13 +94,14 @@ case "$command" in
         require_case
 
         compset="B"
-        compset_mid_suffix="_1850_"
-        cam="CAM5"
+        compset_mid_suffix="_1850"
+        cam="_CAM5"
         compset_suffix="_CN"
 
         walltime="08:00:00"
         stop_n="5"
         stop_option="ndays"
+        xml_params=""
 
         l=${#params[@]}
         while test $l -gt 0; do
@@ -115,7 +116,7 @@ case "$command" in
                 --cam)
                     params=("${params[@]:1}") # shift params by 1
                     if [[ "${params[0]}" == "4" ]]; then
-                        cam="CAM4"
+                        cam=""
                     fi
                 ;;
                 -w|--walltime)
@@ -135,6 +136,10 @@ case "$command" in
                         stop_n="${time_str%y}"
                         stop_option="nyears"
                     fi
+                ;;
+                -p|--params)
+                    params=("${params[@]:1}")
+                    walltime=${params[0]}
                 ;;
                 *)
                     red "$val is not a valid flag"
@@ -172,6 +177,12 @@ case "$command" in
         sed --in-place=.original "/PBS -l walltime=/ s/\=.*$/=$walltime/" "$cas.run"
         # change env_run.xml
         ./xmlchange STOP_OPTION=$stop_option,STOP_N=$stop_n
+
+        #pass extra params to for env_run.xml to xmlchange
+        if [[ ! -z "$xml_params"  ]]; then
+            ./xmlchange $xml_params
+        fi
+
 
         blue "Top of run script:"
         head -n 5 "$cas.run"
