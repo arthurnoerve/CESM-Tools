@@ -1,6 +1,9 @@
 # Changelog
 
-
+02.03.2018
+* Change - Directly build or, build and sub during create: handy for reference case creation
+* Change - Parameter passing during create; change env_run.xml with a comma separated list as argument to the -p or --params parameter
+01.03.2018
+* Change - "Complete" parsing flexibility for different types of compsets. Needs to be implemented to support the various options provided by CESM
 11.01.2018
-CESM:
-    * Change - Refactored the cesm commands 
+* Change - Refactored the cesm commands
